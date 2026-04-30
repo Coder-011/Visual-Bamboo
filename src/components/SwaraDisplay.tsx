@@ -5,9 +5,7 @@ import type { Swara } from '../store/useBansuriStore';
 const SwaraDisplay: React.FC = () => {
   const { currentSwara, isPlaying, holeStates } = useBansuriStore();
 
-  const swaras: Swara[] = ['Sa', 'Re', 'Ga', 'Ma', 'Pa', 'Dha', 'Ni'];
-
-  const getHoleLabel = (index: number, state: string) => {
+  const getHoleLabel = (_index: number, state: string) => {
     if (state === 'CLOSED') return '●';
     if (state === 'HALF_OPEN') return '◐';
     return '○';
