@@ -1,0 +1,59 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Build output
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Environment
+.env
+.<environment_details>
+# Visual Studio Code Visible Files
+bansuri-gesture-webapp/src/main.tsx
+
+# Visual Studio Code Open Tabs
+bansuri-gesture-webapp/src/store/useBansuriStore.ts
+bansuri-gesture-webapp/src/systems/audioMapping.ts
+bansuri-gesture-webapp/src/systems/audioEngine.ts
+bansuri-gesture-webapp/src/types/mediapipe.d.ts
+bansuri-gesture-webapp/src/systems/handTracking.ts
+bansuri-gesture-webapp/src/systems/gestureRecognition.ts
+bansuri-gesture-webapp/src/components/WebcamView.tsx
+bansuri-gesture-webapp/src/components/Flute3D.tsx
+bansuri-gesture-webapp/src/components/SwaraDisplay.tsx
+bansuri-gesture-webapp/src/App.tsx
+bansuri-gesture-webapp/src/main.tsx
+bansuri-gesture-webapp/src/index.css
+bansuri-gesture-webapp/package.json
+
+# Inactive Terminals
+## git init bansuri-gesture-webapp
+### New Output
+Initialized empty Git repository in C:/Users/aranu/OneDrive/Desktop/Visual Bamboo/bansuri-gesture-webapp/.git/
+
+# Current Time
+4/30/2026, 11:06:00 PM (Asia/Katmandu, UTC+5.75:00)
+
+# Context Window Usage
+61,071 / 262.144K tokens used (23%)
+
+# Current Mode
+ACT MODE
+</environment_details>
