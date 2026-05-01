@@ -105,30 +105,81 @@ const App: React.FC = () => {
         </p>
       </div>
 
-      {/* Instructions */}
-      {!webcamReady && (
+      {/* Instructions / Splash Screen */}
+      {(!webcamReady || !isPlaying) && (
         <div style={{
           position: 'absolute',
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           zIndex: 30,
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          padding: '30px',
-          borderRadius: '12px',
-          border: '1px solid rgba(218, 165, 32, 0.3)',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          padding: '40px',
+          borderRadius: '16px',
+          border: '1px solid rgba(218, 165, 32, 0.5)',
           textAlign: 'center',
-          maxWidth: '400px',
+          maxWidth: '450px',
+          boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+          backdropFilter: 'blur(10px)',
         }}>
-          <h2 style={{ color: '#DAA520', marginBottom: '15px' }}>Welcome to Bansuri</h2>
-          <p style={{ color: '#fff', marginBottom: '10px' }}>
-            Please allow webcam access to begin.
-          </p>
-          <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '14px' }}>
-            Use open palm gesture for 1 second to start playing.
-            <br />
-            Use closed fist for 1 second to stop.
-          </p>
+          <h2 style={{ color: '#DAA520', marginBottom: '20px', fontSize: '28px', fontWeight: '300', letterSpacing: '2px' }}>
+            Welcome to Bansuri
+          </h2>
+          
+          {useBansuriStore.getState().error ? (
+            <div style={{ color: '#ff4d4d', marginBottom: '20px', backgroundColor: 'rgba(255, 77, 77, 0.1)', padding: '10px', borderRadius: '4px' }}>
+              {useBansuriStore.getState().error}
+            </div>
+          ) : !webcamReady ? (
+            <div style={{ color: '#fff', marginBottom: '25px' }}>
+              <p style={{ marginBottom: '15px' }}>Initializing AI Hand Tracking...</p>
+              <div style={{ width: '100%', height: '2px', background: '#333', overflow: 'hidden' }}>
+                <div className="loading-bar" style={{ height: '100%', background: '#DAA520' }} />
+              </div>
+            </div>
+          ) : (
+            <div style={{ color: '#fff', marginBottom: '25px' }}>
+              <p style={{ marginBottom: '15px', color: '#90EE90' }}>✓ Camera & AI Ready</p>
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
+                Click the button below to enable audio and start the gesture recognition.
+              </p>
+            </div>
+          )}
+
+          <button 
+            onClick={() => {
+              if (webcamReady) {
+                useBansuriStore.getState().setPlaying(true);
+                import('./systems/audioEngine').then(m => m.audioEngine.initialize());
+              }
+            }}
+            disabled={!webcamReady}
+            style={{
+              backgroundColor: webcamReady ? '#DAA520' : '#333',
+              color: '#000',
+              border: 'none',
+              padding: '12px 30px',
+              borderRadius: '30px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: webcamReady ? 'pointer' : 'not-allowed',
+              transition: 'all 0.3s',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+            }}
+          >
+            {webcamReady ? 'Start Playing' : 'Loading...'}
+          </button>
+
+          <div style={{ marginTop: '25px', textAlign: 'left', color: 'rgba(255,255,255,0.5)', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
+            <strong>HOW TO PLAY:</strong>
+            <ul style={{ paddingLeft: '20px', marginTop: '5px' }}>
+              <li>Allow Camera Access when prompted.</li>
+              <li>Show your <strong>Open Palm</strong> to start the sound.</li>
+              <li>Close your <strong>Fist</strong> to stop the sound.</li>
+              <li>Move fingers to change notes (Swara).</li>
+            </ul>
+          </div>
         </div>
       )}
 

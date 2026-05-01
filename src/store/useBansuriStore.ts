@@ -10,6 +10,7 @@ interface BansuriState {
   isGestureActive: boolean;
   webcamReady: boolean;
   audioReady: boolean;
+  error: string | null;
   detectionLatency: number;
   setPlaying: (playing: boolean) => void;
   setCurrentSwara: (swara: Swara) => void;
@@ -17,6 +18,7 @@ interface BansuriState {
   setGestureActive: (active: boolean) => void;
   setWebcamReady: (ready: boolean) => void;
   setAudioReady: (ready: boolean) => void;
+  setError: (error: string | null) => void;
   setDetectionLatency: (latency: number) => void;
 }
 
@@ -27,6 +29,7 @@ export const useBansuriStore = create<BansuriState>((set) => ({
   isGestureActive: false,
   webcamReady: false,
   audioReady: false,
+  error: null,
   detectionLatency: 0,
   setPlaying: (playing) => set({ isPlaying: playing }),
   setCurrentSwara: (swara) => set({ currentSwara: swara }),
@@ -34,5 +37,6 @@ export const useBansuriStore = create<BansuriState>((set) => ({
   setGestureActive: (active) => set({ isGestureActive: active }),
   setWebcamReady: (ready) => set({ webcamReady: ready }),
   setAudioReady: (ready) => set({ audioReady: ready }),
+  setError: (error) => set({ error: error }),
   setDetectionLatency: (latency) => set({ detectionLatency: latency }),
 }));

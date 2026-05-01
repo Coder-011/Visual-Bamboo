@@ -50,12 +50,21 @@ const WebcamView: React.FC = () => {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
           
-          await handTrackingSystem.initialize(videoRef.current);
-          handTrackingSystem.startDetection(handleResults);
-          setWebcamReady(true);
+          try {
+            await handTrackingSystem.initialize(videoRef.current);
+            handTrackingSystem.startDetection(handleResults);
+            setWebcamReady(true);
+          } catch (aiErr) {
+            console.error('AI Initialization failed:', aiErr);
+            useBansuriStore.getState().setError('Failed to initialize AI Hand Tracking. Please check your internet connection.');
+          }
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Camera access error:', err);
+        let msg = 'Camera access denied. Please allow camera permissions and refresh.';
+        if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') msg = 'No camera found on this device.';
+        if (err.name === 'NotReadableError' || err.name === 'TrackStartError') msg = 'Camera is already in use by another app.';
+        useBansuriStore.getState().setError(msg);
       }
     };
 
