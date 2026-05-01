@@ -7,7 +7,7 @@ import SwaraDisplay from './components/SwaraDisplay';
 import { useBansuriStore } from './store/useBansuriStore';
 
 const App: React.FC = () => {
-  const { holeStates, isPlaying, webcamReady } = useBansuriStore();
+  const { holeStates, isPlaying, webcamReady, error } = useBansuriStore();
 
   return (
     <div style={{
@@ -126,9 +126,9 @@ const App: React.FC = () => {
             Welcome to Bansuri
           </h2>
           
-          {useBansuriStore.getState().error ? (
+          {error ? (
             <div style={{ color: '#ff4d4d', marginBottom: '20px', backgroundColor: 'rgba(255, 77, 77, 0.1)', padding: '10px', borderRadius: '4px' }}>
-              {useBansuriStore.getState().error}
+              {error}
             </div>
           ) : !webcamReady ? (
             <div style={{ color: '#fff', marginBottom: '25px' }}>

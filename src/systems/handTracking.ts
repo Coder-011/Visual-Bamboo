@@ -16,51 +16,28 @@ class HandTrackingSystem {
   async initialize(videoElement: HTMLVideoElement) {
     this.videoElement = videoElement;
 
-    try {
-      // Use locally hosted WASM and models (downloaded during build)
-      const baseUrl = import.meta.env.BASE_URL || '/';
-      const origin = window.location.origin;
-      const wasmPath = new URL(`${baseUrl}mediapipe/`, origin).href;
-      const modelPath = new URL(`${baseUrl}mediapipe/hand_landmarker.task`, origin).href;
+    // Use WASM files served from node_modules via vite (most reliable, no CDN needed)
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm'
+    );
 
-      console.log('Initializing AI with local paths:', { wasmPath, modelPath });
+    const baseUrl = import.meta.env.BASE_URL ?? '/';
+    const base = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+    const modelPath = `${window.location.origin}${base}mediapipe/hand_landmarker.task`;
 
-      const vision = await FilesetResolver.forVisionTasks(wasmPath);
-      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: modelPath,
-          delegate: 'CPU'
-        },
-        runningMode: 'VIDEO',
-        numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
+    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: modelPath,
+        delegate: 'CPU',
+      },
+      runningMode: 'VIDEO',
+      numHands: 2,
+      minHandDetectionConfidence: 0.5,
+      minHandPresenceConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
 
-      if (this.handLandmarker) {
-        console.log('AI Initialized successfully using local assets');
-        return;
-      }
-    } catch (err) {
-      console.warn('Failed to initialize AI using local assets, falling back to CDN:', err);
-      
-      // Fallback to CDN if local fails (e.g. in development mode)
-      const vision = await FilesetResolver.forVisionTasks(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm'
-      );
-      this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-        baseOptions: {
-          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-          delegate: 'CPU'
-        },
-        runningMode: 'VIDEO',
-        numHands: 2,
-        minHandDetectionConfidence: 0.5,
-        minHandPresenceConfidence: 0.5,
-        minTrackingConfidence: 0.5,
-      });
-    }
+    console.log('AI Initialized successfully');
   }
 
   startDetection(onResults: (result: HandTrackingResult) => void) {

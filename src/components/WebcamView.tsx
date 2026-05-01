@@ -56,7 +56,7 @@ const WebcamView: React.FC = () => {
             setWebcamReady(true);
           } catch (aiErr) {
             console.error('AI Initialization failed:', aiErr);
-            useBansuriStore.getState().setError('Failed to initialize AI Hand Tracking. Please check your internet connection.');
+            useBansuriStore.getState().setError(`AI Hand Tracking failed to load. Error: ${aiErr instanceof Error ? aiErr.message : String(aiErr)}`);
           }
         }
       } catch (err: any) {
