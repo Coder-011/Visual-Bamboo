@@ -4,7 +4,7 @@ type SwaraFrequencyMap = {
   [K in Exclude<Swara, null>]: number;
 } & { null: number };
 
-// Bansuri C-major scale frequencies
+// Bansuri C-major scale — standard concert pitch
 export const SWARA_FREQUENCIES: SwaraFrequencyMap = {
   'Sa':  261.63, // C4
   'Re':  293.66, // D4
@@ -16,43 +16,69 @@ export const SWARA_FREQUENCIES: SwaraFrequencyMap = {
   null: 0,
 };
 
-// Real bansuri fingering (6 holes, 0 = topmost near mouth):
-//
-// Sa  — all 6 holes CLOSED
-// Re  — hole 5 OPEN  (bottom pinky open)
-// Ga  — holes 4,5 OPEN
-// Ma  — hole 0 HALF_OPEN (index finger half-hole), rest closed
-// Pa  — holes 3,4,5 OPEN
-// Dha — holes 2,3,4,5 OPEN
-// Ni  — holes 1,2,3,4,5 OPEN (only top hole closed)
+/**
+ * Bansuri fingering chart — holes[0..5] = holes 1–6 (top = blow hole end)
+ *
+ *  Hole:   1(idx0)  2(idx1)  3(idx2)  4(idx3)  5(idx4)  6(idx5)
+ *  Finger: L.index  L.mid    L.ring   R.index  R.mid    R.ring
+ *
+ *  Pa  — ●  ●  ●  ●  ●  ●   (all 6 closed)
+ *  Dha — ●  ●  ●  ●  ●  ○   (top 5 closed, hole 6 open)
+ *  Ni  — ●  ●  ●  ●  ○  ○   (top 4 closed, holes 5-6 open)
+ *  Sa  — ●  ●  ●  ○  ○  ○   (top 3 closed, holes 4-6 open)
+ *  Re  — ●  ●  ○  ○  ○  ○   (top 2 closed, holes 3-6 open)
+ *  Ga  — ●  ○  ○  ○  ○  ○   (top 1 closed, holes 2-6 open)
+ *  Ma  — ◐  ○  ○  ○  ○  ○   (hole 1 half-covered, rest open)
+ *
+ *  ● = CLOSED  ◐ = HALF_OPEN  ○ = OPEN
+ */
+
+const C = 'CLOSED' as HoleState;
+const H = 'HALF_OPEN' as HoleState;
+const O = 'OPEN' as HoleState;
+
+const FINGERING_TABLE: { pattern: HoleState[]; swara: Swara }[] = [
+  { pattern: [H, O, O, O, O, O], swara: 'Ma'  }, // hole 1 half-covered
+  { pattern: [C, C, C, C, C, C], swara: 'Pa'  }, // all 6 closed
+  { pattern: [C, C, C, C, C, O], swara: 'Dha' }, // top 5 closed
+  { pattern: [C, C, C, C, O, O], swara: 'Ni'  }, // top 4 closed
+  { pattern: [C, C, C, O, O, O], swara: 'Sa'  }, // top 3 closed
+  { pattern: [C, C, O, O, O, O], swara: 'Re'  }, // top 2 closed
+  { pattern: [C, O, O, O, O, O], swara: 'Ga'  }, // top 1 closed
+];
+
+/**
+ * Score how well a detected hole state matches a fingering pattern.
+ * CLOSED/OPEN mismatches cost more than HALF_OPEN ambiguity.
+ */
+function matchScore(detected: HoleState[], pattern: HoleState[]): number {
+  let score = 0;
+  for (let i = 0; i < 6; i++) {
+    if (detected[i] === pattern[i]) {
+      score += 2; // exact match
+    } else if (detected[i] === 'HALF_OPEN' || pattern[i] === 'HALF_OPEN') {
+      score += 1; // partial credit for half-open ambiguity
+    }
+    // mismatch = 0
+  }
+  return score;
+}
 
 export function mapHolesToSwara(holeStates: HoleState[]): Swara {
-  // Ma: top hole is half-open
+  // Ma is unambiguous — half-hole on index finger
   if (holeStates[0] === 'HALF_OPEN') return 'Ma';
 
-  const closed = (i: number) => holeStates[i] === 'CLOSED';
-  const open   = (i: number) => holeStates[i] === 'OPEN';
+  let bestSwara: Swara = 'Sa';
+  let bestScore = -1;
 
-  // Sa: all closed
-  if ([0,1,2,3,4,5].every(i => closed(i))) return 'Sa';
+  for (const { pattern, swara } of FINGERING_TABLE) {
+    if (swara === 'Ma') continue; // already handled above
+    const score = matchScore(holeStates, pattern);
+    if (score > bestScore) {
+      bestScore = score;
+      bestSwara = swara;
+    }
+  }
 
-  // Re: only hole 5 open
-  if (closed(0) && closed(1) && closed(2) && closed(3) && closed(4) && open(5)) return 'Re';
-
-  // Ga: holes 4,5 open
-  if (closed(0) && closed(1) && closed(2) && closed(3) && open(4) && open(5)) return 'Ga';
-
-  // Pa: holes 3,4,5 open
-  if (closed(0) && closed(1) && closed(2) && open(3) && open(4) && open(5)) return 'Pa';
-
-  // Dha: holes 2,3,4,5 open
-  if (closed(0) && closed(1) && open(2) && open(3) && open(4) && open(5)) return 'Dha';
-
-  // Ni: holes 1,2,3,4,5 open
-  if (closed(0) && open(1) && open(2) && open(3) && open(4) && open(5)) return 'Ni';
-
-  // Fallback: count open holes from bottom for approximate mapping
-  const openFromBottom = [5,4,3,2,1,0].filter(i => open(i)).length;
-  const map: Swara[] = ['Sa','Re','Ga','Pa','Dha','Ni','Ni'];
-  return map[Math.min(openFromBottom, 6)];
+  return bestSwara;
 }
