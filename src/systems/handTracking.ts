@@ -16,21 +16,40 @@ class HandTrackingSystem {
   async initialize(videoElement: HTMLVideoElement) {
     this.videoElement = videoElement;
 
-    const vision = await FilesetResolver.forVisionTasks(
-      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm'
-    );
+    const urls = [
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm',
+      'https://www.gstatic.com/mediapipe/solutions/hands',
+      'https://unpkg.com/@mediapipe/tasks-vision@0.10.16/wasm'
+    ];
 
-    this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
-        delegate: 'CPU'
-      },
-      runningMode: 'VIDEO',
-      numHands: 2,
-      minHandDetectionConfidence: 0.5,
-      minHandPresenceConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
+    let lastErr: any = null;
+
+    for (const url of urls) {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(url);
+        this.handLandmarker = await HandLandmarker.createFromOptions(vision, {
+          baseOptions: {
+            modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+            delegate: 'CPU'
+          },
+          runningMode: 'VIDEO',
+          numHands: 2,
+          minHandDetectionConfidence: 0.5,
+          minHandPresenceConfidence: 0.5,
+          minTrackingConfidence: 0.5,
+        });
+        
+        if (this.handLandmarker) {
+          console.log(`AI Initialized successfully using ${url}`);
+          return; // Success!
+        }
+      } catch (err) {
+        console.warn(`Failed to initialize AI using ${url}:`, err);
+        lastErr = err;
+      }
+    }
+
+    throw lastErr || new Error('All AI initialization attempts failed.');
   }
 
   startDetection(onResults: (result: HandTrackingResult) => void) {
