@@ -84,17 +84,22 @@ function getThreeFingerStates(hand: NormalizedLandmark[]): [HoleState, HoleState
   ) as [HoleState, HoleState, HoleState];
 }
 
-// ─── Ma half-hole ─────────────────────────────────────────────────────────────
-// Index finger slightly curled (half-hole), middle + ring fully on holes
-function isMaHalfHole(hand: NormalizedLandmark[]): boolean {
-  const idxCurl = curlRatio(hand, 8,  7,  6,  5);
+// ─── Ma detection ────────────────────────────────────────────────────────────
+// Ma is played by tilting the left index finger STRONGLY upward/away from the
+// flute while middle and ring fingers are lifted (open).
+// Detection: index tip is far above the index MCP (finger pointing up/away),
+// AND middle + ring are open (not on holes).
+function isMaGesture(hand: NormalizedLandmark[]): boolean {
+  // Index tip (8) must be well above index MCP (5) in Y — finger tilted up
+  // Use a generous threshold so a strong tilt is required
+  const indexTiltedUp = (hand[5].y - hand[8].y) > 0.08;
+
+  // Middle and ring must be open (low curl)
   const midCurl = curlRatio(hand, 12, 11, 10, 9);
   const rngCurl = curlRatio(hand, 16, 15, 14, 13);
-  return (
-    idxCurl >= HALF_OPEN_THRESH && idxCurl < CLOSED_THRESH &&
-    midCurl < HALF_OPEN_THRESH &&
-    rngCurl < HALF_OPEN_THRESH
-  );
+  const othersOpen = midCurl < CLOSED_THRESH && rngCurl < CLOSED_THRESH;
+
+  return indexTiltedUp && othersOpen;
 }
 
 // ─── Public: hole states ──────────────────────────────────────────────────────
@@ -105,20 +110,18 @@ export function detectHoleStates(landmarks: NormalizedLandmark[][]): HoleState[]
 
   if (landmarks.length === 1) {
     const hand = landmarks[0];
-    if (isMaHalfHole(hand)) {
+    if (isMaGesture(hand)) {
       return ['HALF_OPEN', 'OPEN', 'OPEN', 'OPEN', 'OPEN', 'OPEN'];
     }
     const [h1, h2, h3] = getThreeFingerStates(hand);
-    // One hand in frame = left hand (holes 1-3), right hand holes 4-6 open
     return [h1, h2, h3, 'OPEN', 'OPEN', 'OPEN'];
   }
 
-  // Two hands: in mirrored webcam, left hand wrist has higher X value
   const [handA, handB] = landmarks;
   const leftHand  = handA[0].x > handB[0].x ? handA : handB;
   const rightHand = handA[0].x > handB[0].x ? handB : handA;
 
-  if (isMaHalfHole(leftHand)) {
+  if (isMaGesture(leftHand)) {
     return ['HALF_OPEN', 'OPEN', 'OPEN', 'OPEN', 'OPEN', 'OPEN'];
   }
 
