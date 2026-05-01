@@ -19,8 +19,9 @@ class HandTrackingSystem {
     try {
       // Use locally hosted WASM and models (downloaded during build)
       const baseUrl = import.meta.env.BASE_URL || '/';
-      const wasmPath = `${baseUrl}mediapipe`.replace(/\/+/g, '/');
-      const modelPath = `${baseUrl}mediapipe/hand_landmarker.task`.replace(/\/+/g, '/');
+      const origin = window.location.origin;
+      const wasmPath = new URL(`${baseUrl}mediapipe/`, origin).href;
+      const modelPath = new URL(`${baseUrl}mediapipe/hand_landmarker.task`, origin).href;
 
       console.log('Initializing AI with local paths:', { wasmPath, modelPath });
 

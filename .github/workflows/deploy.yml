@@ -43,11 +43,10 @@ jobs:
         run: |
           mkdir -p dist/mediapipe
           curl -L "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task" -o dist/mediapipe/hand_landmarker.task
-          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/hand_landmarker.wasm" -o dist/mediapipe/hand_landmarker.wasm
-          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/hand_landmarker_solution_simd_wasm_bin.js" -o dist/mediapipe/hand_landmarker_solution_simd_wasm_bin.js
-          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/hand_landmarker_solution_simd_wasm_bin.wasm" -o dist/mediapipe/hand_landmarker_solution_simd_wasm_bin.wasm
-          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/hand_landmarker_solution_wasm_bin.js" -o dist/mediapipe/hand_landmarker_solution_wasm_bin.js
-          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/hand_landmarker_solution_wasm_bin.wasm" -o dist/mediapipe/hand_landmarker_solution_wasm_bin.wasm
+          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/vision_wasm_internal.js" -o dist/mediapipe/vision_wasm_internal.js
+          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/vision_wasm_internal.wasm" -o dist/mediapipe/vision_wasm_internal.wasm
+          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/vision_wasm_internal_simd.js" -o dist/mediapipe/vision_wasm_internal_simd.js
+          curl -L "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.16/wasm/vision_wasm_internal_simd.wasm" -o dist/mediapipe/vision_wasm_internal_simd.wasm
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
