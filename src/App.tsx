@@ -175,9 +175,9 @@ const App: React.FC = () => {
             <strong>HOW TO PLAY:</strong>
             <ul style={{ paddingLeft: '20px', marginTop: '5px' }}>
               <li>Allow Camera Access when prompted.</li>
-              <li>Show your <strong>Open Palm</strong> to start the sound.</li>
-              <li>Close your <strong>Fist</strong> to stop the sound.</li>
-              <li>Move fingers to change notes (Swara).</li>
+              <li>Show a <strong>Thumbs Up 👍</strong> to start playing.</li>
+              <li>Show a <strong>Thumbs Down 👎</strong> to stop.</li>
+              <li>Curl fingers to cover holes and play notes.</li>
             </ul>
           </div>
         </div>

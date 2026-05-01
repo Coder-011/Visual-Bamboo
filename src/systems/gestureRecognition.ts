@@ -125,39 +125,55 @@ export function detectHoleStates(landmarks: NormalizedLandmark[][]): HoleState[]
 }
 
 // ─── Start / Stop gestures ────────────────────────────────────────────────────
-let openPalmStart: number | null = null;
-let fistStart: number | null = null;
+// Thumbs UP = start, Thumbs DOWN = stop.
+// These are completely separate from finger curl used for note detection.
+let thumbsUpStart: number | null = null;
+let thumbsDownStart: number | null = null;
 const GESTURE_HOLD_MS = 800;
+
+function isThumbsUp(hand: NormalizedLandmark[]): boolean {
+  // Thumb tip (4) is significantly ABOVE the wrist (0) in Y
+  const thumbUp = hand[4].y < hand[0].y - 0.15;
+  // All other fingers curled (tips below their MCPs)
+  const fingersCurled =
+    hand[8].y  > hand[5].y  &&
+    hand[12].y > hand[9].y  &&
+    hand[16].y > hand[13].y &&
+    hand[20].y > hand[17].y;
+  return thumbUp && fingersCurled;
+}
+
+function isThumbsDown(hand: NormalizedLandmark[]): boolean {
+  // Thumb tip (4) is significantly BELOW the wrist (0) in Y
+  const thumbDown = hand[4].y > hand[0].y + 0.15;
+  // All other fingers curled
+  const fingersCurled =
+    hand[8].y  > hand[5].y  &&
+    hand[12].y > hand[9].y  &&
+    hand[16].y > hand[13].y &&
+    hand[20].y > hand[17].y;
+  return thumbDown && fingersCurled;
+}
 
 export function detectGesture(landmarks: NormalizedLandmark[][]): GestureType {
   const now = Date.now();
 
   if (landmarks.length === 0) {
-    openPalmStart = fistStart = null;
+    thumbsUpStart = thumbsDownStart = null;
     return 'NONE';
   }
 
   const hand = landmarks[0];
 
-  // Count extended vs curled fingers (index, middle, ring, pinky)
-  let extended = 0, curled = 0;
-  for (const [tip, pip, mcp] of FINGERS) {
-    const angle = pipAngle(hand, tip, pip, mcp);
-    if (angle < 40) extended++; else curled++;
-  }
-  // Also check pinky
-  const pinkyAngle = pipAngle(hand, 20, 19, 17);
-  if (pinkyAngle < 40) extended++; else curled++;
+  if (isThumbsUp(hand)) {
+    if (!thumbsUpStart) thumbsUpStart = now;
+    else if (now - thumbsUpStart >= GESTURE_HOLD_MS) { thumbsUpStart = null; return 'START'; }
+  } else { thumbsUpStart = null; }
 
-  if (extended >= 3) {
-    if (!openPalmStart) openPalmStart = now;
-    else if (now - openPalmStart >= GESTURE_HOLD_MS) { openPalmStart = null; return 'START'; }
-  } else { openPalmStart = null; }
-
-  if (curled >= 3) {
-    if (!fistStart) fistStart = now;
-    else if (now - fistStart >= GESTURE_HOLD_MS) { fistStart = null; return 'STOP'; }
-  } else { fistStart = null; }
+  if (isThumbsDown(hand)) {
+    if (!thumbsDownStart) thumbsDownStart = now;
+    else if (now - thumbsDownStart >= GESTURE_HOLD_MS) { thumbsDownStart = null; return 'STOP'; }
+  } else { thumbsDownStart = null; }
 
   return 'NONE';
 }
