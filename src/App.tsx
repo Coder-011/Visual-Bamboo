@@ -68,8 +68,8 @@ const App: React.FC = () => {
         bottom: '20px',
         right: '20px',
         zIndex: 20,
-        width: '200px',
-        maxWidth: '30vw',
+        width: '280px',
+        maxWidth: '35vw',
       }}>
         <WebcamView />
       </div>

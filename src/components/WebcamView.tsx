@@ -83,17 +83,30 @@ const WebcamView: React.FC = () => {
   const renderLoop = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+    if (!video || !canvas) { animFrameRef.current = requestAnimationFrame(renderLoop); return; }
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) { animFrameRef.current = requestAnimationFrame(renderLoop); return; }
 
     const w = canvas.width;
     const h = canvas.height;
 
-    ctx.save();
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, -w, 0, w, h);
-    ctx.restore();
+    // Always fill black so canvas is never blank
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, w, h);
+
+    // Only draw video once it has actual dimensions
+    if (video.readyState >= 2 && video.videoWidth > 0) {
+      ctx.save();
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.3)';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Camera loading...', w / 2, h / 2);
+    }
 
     for (const hand of latestLandmarks.current) {
       drawHand(ctx, hand, w, h, latestHoleStates.current);
