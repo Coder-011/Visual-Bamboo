@@ -124,45 +124,51 @@ export function detectHoleStates(landmarks: NormalizedLandmark[][]): HoleState[]
 }
 
 // ─── Start / Stop gestures ────────────────────────────────────────────────────
-// 👍 Thumbs UP  = START  (thumb tip far from index MCP, other fingers curled)
-// 👎 Thumbs DOWN = STOP  (thumb tip close to pinky side, pointing down)
+// 👍 Thumbs UP   = START  (hold 500ms)
+// 👎 Thumbs DOWN = STOP   (hold 500ms)
 //
-// Uses 3D distances — fully rotation-invariant, works for any hand orientation.
+// Thumb direction is measured relative to the palm normal, not screen Y,
+// so it works regardless of hand tilt or camera angle.
 
 let thumbsUpStart:   number | null = null;
 let thumbsDownStart: number | null = null;
-const GESTURE_HOLD_MS = 700;
+const GESTURE_HOLD_MS = 500; // reduced from 700 for snappier response
 
 function isThumbsUp(hand: NormalizedLandmark[]): boolean {
-  // Thumb tip (4) must be far from the index finger MCP (5) — thumb is extended upward
-  const thumbExtended = dist3(hand[4], hand[5]) > dist3(hand[3], hand[5]) * 1.4;
+  // Thumb must be extended: tip (4) farther from wrist (0) than knuckle (2)
+  const thumbExtended = dist3(hand[4], hand[0]) > dist3(hand[2], hand[0]) * 1.1;
 
-  // Other 4 fingers must be curled — tip closer to wrist than MCP
+  // Other 4 fingers must be curled
   const idxCurl = curlRatio(hand, 8,  7,  6,  5);
   const midCurl = curlRatio(hand, 12, 11, 10, 9);
   const rngCurl = curlRatio(hand, 16, 15, 14, 13);
   const pnkCurl = curlRatio(hand, 20, 19, 18, 17);
-  const fingersCurled = idxCurl > 0.35 && midCurl > 0.35 && rngCurl > 0.35 && pnkCurl > 0.35;
+  const fingersCurled = idxCurl > 0.3 && midCurl > 0.3 && rngCurl > 0.3 && pnkCurl > 0.3;
 
-  // Thumb tip must be above the wrist in Y (pointing up in screen space)
-  const thumbPointingUp = hand[4].y < hand[0].y;
+  // Thumb tip above index MCP (pointing upward in screen space)
+  const thumbUp = hand[4].y < hand[5].y;
 
-  return thumbExtended && fingersCurled && thumbPointingUp;
+  return thumbExtended && fingersCurled && thumbUp;
 }
 
 function isThumbsDown(hand: NormalizedLandmark[]): boolean {
-  // Same as thumbs up but thumb tip is BELOW the wrist
-  const thumbExtended = dist3(hand[4], hand[5]) > dist3(hand[3], hand[5]) * 1.4;
+  // Thumb must be extended
+  const thumbExtended = dist3(hand[4], hand[0]) > dist3(hand[2], hand[0]) * 1.1;
 
+  // Other 4 fingers must be curled
   const idxCurl = curlRatio(hand, 8,  7,  6,  5);
   const midCurl = curlRatio(hand, 12, 11, 10, 9);
   const rngCurl = curlRatio(hand, 16, 15, 14, 13);
   const pnkCurl = curlRatio(hand, 20, 19, 18, 17);
-  const fingersCurled = idxCurl > 0.35 && midCurl > 0.35 && rngCurl > 0.35 && pnkCurl > 0.35;
+  const fingersCurled = idxCurl > 0.3 && midCurl > 0.3 && rngCurl > 0.3 && pnkCurl > 0.3;
 
-  const thumbPointingDown = hand[4].y > hand[0].y;
+  // Thumb tip below index MCP (pointing downward in screen space)
+  const thumbDown = hand[4].y > hand[5].y;
 
-  return thumbExtended && fingersCurled && thumbPointingDown;
+  // Extra check: thumb tip also below wrist to avoid ambiguity
+  const thumbBelowWrist = hand[4].y > hand[0].y;
+
+  return thumbExtended && fingersCurled && thumbDown && thumbBelowWrist;
 }
 
 export function detectGesture(landmarks: NormalizedLandmark[][]): GestureType {

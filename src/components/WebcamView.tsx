@@ -26,7 +26,8 @@ function drawHand(
   h: number,
   holeStates: string[]
 ) {
-  const toX = (lm: NormalizedLandmark) => (1 - lm.x) * w;
+  // No mirror — natural orientation matching the images
+  const toX = (lm: NormalizedLandmark) => lm.x * w;
   const toY = (lm: NormalizedLandmark) => lm.y * h;
 
   // Skeleton lines — cyan
@@ -94,11 +95,15 @@ const WebcamView: React.FC = () => {
     ctx.fillRect(0, 0, w, h);
 
     if (video.readyState >= 2 && video.videoWidth > 0) {
-      ctx.save();
-      ctx.translate(w, 0);
-      ctx.scale(-1, 1);
-      ctx.drawImage(video, 0, 0, w, h);
-      ctx.restore();
+      // Draw video with cover-crop to fill 16:9 canvas without distortion
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      const scale = Math.max(w / vw, h / vh);
+      const sw = vw * scale;
+      const sh = vh * scale;
+      const sx = (w - sw) / 2;
+      const sy = (h - sh) / 2;
+      ctx.drawImage(video, sx, sy, sw, sh);
     } else {
       ctx.fillStyle = 'rgba(0,217,255,0.15)';
       ctx.font = '13px sans-serif';
@@ -193,7 +198,7 @@ const WebcamView: React.FC = () => {
       <canvas
         ref={canvasRef}
         width={640}
-        height={480}
+        height={360}
         style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
       />
     </div>

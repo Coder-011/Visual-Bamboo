@@ -111,7 +111,7 @@ const App: React.FC = () => {
           <div className="top-row" style={{ display: 'flex', flex: '0 0 auto', borderBottom: `1px solid ${BORDER}` }}>
 
             {/* Webcam panel */}
-            <div style={{ flex: '1 1 55%', position: 'relative', background: '#060a12', borderRight: `1px solid ${BORDER}` }}>
+            <div className="webcam-panel" style={{ flex: '1 1 55%', position: 'relative', background: '#060a12', borderRight: `1px solid ${BORDER}` }}>
               <div style={{ position: 'absolute', top: 10, left: 10, zIndex: 5, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(0,0,0,0.6)', border: `1px solid ${BORDER}`, borderRadius: 20, padding: '4px 10px', fontSize: 11, color: '#fff', backdropFilter: 'blur(4px)' }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: isPlaying ? CYAN : '#666', boxShadow: isPlaying ? `0 0 6px ${CYAN}` : 'none' }} />
                 HAND TRACKING {isPlaying ? 'ACTIVE' : 'INACTIVE'}
@@ -122,7 +122,7 @@ const App: React.FC = () => {
                 <div style={{ color: '#fff', fontSize: 18, fontWeight: 300 }}>{isPlaying ? '0.992' : '—'}</div>
               </div>
 
-              <div style={{ width: '100%', aspectRatio: '4/3', maxHeight: 320, overflow: 'hidden' }}>
+              <div className="webcam-wrap" style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden' }}>
                 <WebcamView />
               </div>
 
@@ -360,6 +360,8 @@ const App: React.FC = () => {
           .desktop-controls { display: none !important; }
           .mobile-bottom-nav { display: flex !important; }
           .top-row { flex-direction: column !important; }
+          .webcam-panel { border-right: none !important; }
+          .webcam-wrap { margin: 10px !important; border-radius: 12px !important; overflow: hidden !important; }
         }
       `}</style>
     </div>
