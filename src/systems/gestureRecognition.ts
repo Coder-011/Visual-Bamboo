@@ -66,11 +66,11 @@ const FINGER_DEFS = [
 ] as const;
 
 // Thresholds — tuned for side-held flute posture
-// A finger resting on a flute hole is only slightly curled (~0.3)
-// A lifted finger is nearly straight (~0.1)
-const CLOSED_THRESH    = 0.28; // curl ≥ 0.28 → finger is on the hole (CLOSED)
-const HALF_OPEN_THRESH = 0.12; // curl 0.12–0.27 → half-hole (Ma)
-// curl < 0.12 → finger lifted (OPEN)
+// Raised CLOSED_THRESH so only genuinely curled fingers register as closed.
+// Lowered HALF_OPEN band to reduce false Ma detections.
+const CLOSED_THRESH    = 0.32; // curl ≥ 0.32 → finger pressing hole (CLOSED)
+const HALF_OPEN_THRESH = 0.16; // curl 0.16–0.31 → half-hole (Ma)
+// curl < 0.16 → finger lifted (OPEN)
 
 function curlToState(curl: number): HoleState {
   if (curl >= CLOSED_THRESH)    return 'CLOSED';
@@ -85,20 +85,13 @@ function getThreeFingerStates(hand: NormalizedLandmark[]): [HoleState, HoleState
 }
 
 // ─── Ma detection ────────────────────────────────────────────────────────────
-// Ma is played by tilting the left index finger STRONGLY upward/away from the
-// flute while middle and ring fingers are lifted (open).
-// Detection: index tip is far above the index MCP (finger pointing up/away),
-// AND middle + ring are open (not on holes).
+// Ma: index finger strongly tilted up (away from flute), middle+ring open.
+// Require a larger tilt (0.12) to avoid false positives during normal playing.
 function isMaGesture(hand: NormalizedLandmark[]): boolean {
-  // Index tip (8) must be well above index MCP (5) in Y — finger tilted up
-  // Use a generous threshold so a strong tilt is required
-  const indexTiltedUp = (hand[5].y - hand[8].y) > 0.08;
-
-  // Middle and ring must be open (low curl)
+  const indexTiltedUp = (hand[5].y - hand[8].y) > 0.12;
   const midCurl = curlRatio(hand, 12, 11, 10, 9);
   const rngCurl = curlRatio(hand, 16, 15, 14, 13);
-  const othersOpen = midCurl < CLOSED_THRESH && rngCurl < CLOSED_THRESH;
-
+  const othersOpen = midCurl < HALF_OPEN_THRESH && rngCurl < HALF_OPEN_THRESH;
   return indexTiltedUp && othersOpen;
 }
 

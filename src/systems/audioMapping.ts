@@ -77,8 +77,16 @@ function matchScore(detected: HoleState[], pattern: HoleState[]): number {
   return score;
 }
 
+// Debounce: only switch note if the same candidate holds for DEBOUNCE_MS
+const DEBOUNCE_MS = 80;
+let pendingSwara: Swara = null;
+let pendingStart = 0;
+let lastConfirmedSwara: Swara = null;
+
 export function mapHolesToSwara(holeStates: HoleState[]): Swara {
-  if (holeStates[0] === 'HALF_OPEN') return 'Ma';
+  if (holeStates[0] === 'HALF_OPEN') {
+    return debounce('Ma');
+  }
 
   let bestSwara: Swara = 'Sa';
   let bestScore = -1;
@@ -92,5 +100,17 @@ export function mapHolesToSwara(holeStates: HoleState[]): Swara {
     }
   }
 
-  return bestSwara;
+  return debounce(bestSwara);
+}
+
+function debounce(candidate: Swara): Swara {
+  const now = Date.now();
+  if (candidate !== pendingSwara) {
+    pendingSwara = candidate;
+    pendingStart = now;
+  }
+  if (now - pendingStart >= DEBOUNCE_MS) {
+    lastConfirmedSwara = candidate;
+  }
+  return lastConfirmedSwara;
 }

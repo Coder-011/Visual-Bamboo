@@ -6,18 +6,18 @@ import { mapHolesToSwara } from '../systems/audioMapping';
 import { audioEngine } from '../systems/audioEngine';
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
 
-// MediaPipe hand connections for skeleton drawing
+const CYAN = '#00d9ff';
+
 const HAND_CONNECTIONS: [number, number][] = [
-  [0,1],[1,2],[2,3],[3,4],       // thumb
-  [0,5],[5,6],[6,7],[7,8],       // index
-  [0,9],[9,10],[10,11],[11,12],  // middle
-  [0,13],[13,14],[14,15],[15,16],// ring
-  [0,17],[17,18],[18,19],[19,20],// pinky
-  [5,9],[9,13],[13,17],          // palm
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17],
 ];
 
-// Finger tip indices that correspond to bansuri holes
-const HOLE_TIPS = [8, 12, 16]; // index, middle, ring
+const HOLE_TIPS = [8, 12, 16];
 
 function drawHand(
   ctx: CanvasRenderingContext2D,
@@ -26,12 +26,12 @@ function drawHand(
   h: number,
   holeStates: string[]
 ) {
-  const toX = (lm: NormalizedLandmark) => (1 - lm.x) * w; // mirror
+  const toX = (lm: NormalizedLandmark) => (1 - lm.x) * w;
   const toY = (lm: NormalizedLandmark) => lm.y * h;
 
-  // Draw connections
-  ctx.strokeStyle = 'rgba(218,165,32,0.7)';
-  ctx.lineWidth = 2;
+  // Skeleton lines — cyan
+  ctx.strokeStyle = `${CYAN}99`;
+  ctx.lineWidth = 1.5;
   for (const [a, b] of HAND_CONNECTIONS) {
     ctx.beginPath();
     ctx.moveTo(toX(landmarks[a]), toY(landmarks[a]));
@@ -39,34 +39,34 @@ function drawHand(
     ctx.stroke();
   }
 
-  // Draw all landmarks
+  // All joints — small cyan dots
   for (let i = 0; i < landmarks.length; i++) {
     const x = toX(landmarks[i]);
     const y = toY(landmarks[i]);
     ctx.beginPath();
-    ctx.arc(x, y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = CYAN;
     ctx.fill();
   }
 
-  // Highlight hole-covering fingertips
+  // Fingertip highlights for hole-covering fingers
   HOLE_TIPS.forEach((tipIdx, holeIdx) => {
     const state = holeStates[holeIdx];
     const x = toX(landmarks[tipIdx]);
     const y = toY(landmarks[tipIdx]);
+
+    // Glow ring
     ctx.beginPath();
-    ctx.arc(x, y, 8, 0, Math.PI * 2);
-    if (state === 'CLOSED') {
-      ctx.fillStyle = 'rgba(139,69,19,0.9)';
-    } else if (state === 'HALF_OPEN') {
-      ctx.fillStyle = 'rgba(218,165,32,0.9)';
-    } else {
-      ctx.fillStyle = 'rgba(100,200,100,0.7)';
-    }
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
+    ctx.arc(x, y, 12, 0, Math.PI * 2);
+    ctx.strokeStyle = state === 'CLOSED' ? CYAN : state === 'HALF_OPEN' ? `${CYAN}88` : 'rgba(255,255,255,0.2)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
+
+    // Filled dot
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = state === 'CLOSED' ? CYAN : state === 'HALF_OPEN' ? `${CYAN}88` : 'rgba(255,255,255,0.3)';
+    ctx.fill();
   });
 }
 
@@ -76,10 +76,10 @@ const WebcamView: React.FC = () => {
   const latestLandmarks = useRef<NormalizedLandmark[][]>([]);
   const latestHoleStates = useRef<string[]>(['OPEN','OPEN','OPEN','OPEN','OPEN','OPEN']);
   const animFrameRef = useRef<number>(0);
+  const lastFrameTime = useRef<number>(0);
 
-  const { setWebcamReady, setPlaying, setCurrentSwara, setHoleStates, setGestureActive } = useBansuriStore();
+  const { setWebcamReady, setPlaying, setCurrentSwara, setHoleStates, setGestureActive, setDetectionLatency } = useBansuriStore();
 
-  // Render loop: draw video + skeleton on canvas
   const renderLoop = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -90,11 +90,9 @@ const WebcamView: React.FC = () => {
     const w = canvas.width;
     const h = canvas.height;
 
-    // Always fill black so canvas is never blank
-    ctx.fillStyle = '#111';
+    ctx.fillStyle = '#060a12';
     ctx.fillRect(0, 0, w, h);
 
-    // Only draw video once it has actual dimensions
     if (video.readyState >= 2 && video.videoWidth > 0) {
       ctx.save();
       ctx.translate(w, 0);
@@ -102,8 +100,8 @@ const WebcamView: React.FC = () => {
       ctx.drawImage(video, 0, 0, w, h);
       ctx.restore();
     } else {
-      ctx.fillStyle = 'rgba(255,255,255,0.3)';
-      ctx.font = '14px sans-serif';
+      ctx.fillStyle = 'rgba(0,217,255,0.15)';
+      ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('Camera loading...', w / 2, h / 2);
     }
@@ -116,6 +114,11 @@ const WebcamView: React.FC = () => {
   }, []);
 
   const handleResults = useCallback((result: any) => {
+    const now = performance.now();
+    const latency = now - lastFrameTime.current;
+    lastFrameTime.current = now;
+    setDetectionLatency(Math.min(latency, 99.9));
+
     const { landmarks } = result;
     latestLandmarks.current = landmarks;
 
@@ -141,19 +144,19 @@ const WebcamView: React.FC = () => {
     if (isPlaying && swara) {
       audioEngine.playSwara(swara);
     }
-  }, [setPlaying, setCurrentSwara, setHoleStates, setGestureActive]);
+  }, [setPlaying, setCurrentSwara, setHoleStates, setGestureActive, setDetectionLatency]);
 
   useEffect(() => {
     const initCamera = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: 640, height: 480 }
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
         });
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
-
+          lastFrameTime.current = performance.now();
           animFrameRef.current = requestAnimationFrame(renderLoop);
 
           try {
@@ -161,14 +164,13 @@ const WebcamView: React.FC = () => {
             handTrackingSystem.startDetection(handleResults);
             setWebcamReady(true);
           } catch (aiErr) {
-            console.error('AI Initialization failed:', aiErr);
+            console.error('AI init failed:', aiErr);
             useBansuriStore.getState().setError(
               `AI Hand Tracking failed: ${aiErr instanceof Error ? aiErr.message : String(aiErr)}`
             );
           }
         }
       } catch (err: any) {
-        console.error('Camera error:', err);
         let msg = 'Camera access denied. Please allow camera permissions and refresh.';
         if (err.name === 'NotFoundError') msg = 'No camera found on this device.';
         if (err.name === 'NotReadableError') msg = 'Camera is already in use by another app.';
@@ -186,33 +188,14 @@ const WebcamView: React.FC = () => {
   }, [handleResults, setWebcamReady, renderLoop]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <video ref={videoRef} style={{ display: 'none' }} playsInline muted />
       <canvas
         ref={canvasRef}
-        width={320}
-        height={240}
-        style={{
-          borderRadius: '12px',
-          border: '2px solid rgba(218,165,32,0.5)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-          maxWidth: '100%',
-          height: 'auto',
-          display: 'block',
-        }}
+        width={640}
+        height={480}
+        style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
       />
-      {/* Legend */}
-      <div style={{
-        position: 'absolute', bottom: 6, left: 6,
-        display: 'flex', gap: 6, fontSize: 10, color: '#fff',
-      }}>
-        {[['#8B4513','Closed'],['#DAA520','Half'],['#64C864','Open']].map(([color, label]) => (
-          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-            {label}
-          </span>
-        ))}
-      </div>
     </div>
   );
 };
